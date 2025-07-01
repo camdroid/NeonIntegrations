@@ -191,7 +191,9 @@ for teacher in TEACHERS:
             {pretty_registrants}
         """
         pretty_events += info
+    sendTeacherEmail(teacher, pretty_events)
 
+def sendTeacherEmail(teacher, pretty_events):
     ##### GMAIL #####
     # Reformat date for email subject
     formatted_today = TODAY.strftime("%B %d")
