@@ -171,29 +171,31 @@ for teacher in TEACHERS:
             pretty_registrants += prettifyRegistrants(individual_event_reg)
         else:
             pretty_registrants += "\tNo attendees registered currently. Check Neon for updates as event approaches.\n\t"
+        def prettifyEvent(event, pretty_registrants):
+            # Build up formatted event info for email body
+            raw_time = event["Event Start Time"]
+            raw_date = event["Event Start Date"]
+            datetime_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d").date()
+            formatted_date = datetime.date.strftime(datetime_date, "%B %d")
+            start_time = datetime.datetime.strptime(raw_time, "%H:%M:%S").strftime(
+                "%I:%M %p"
+            )
+            if datetime_date == TODAY:
+                date_string = f"TODAY - {formatted_date}"
+            elif datetime_date == TODAY + datetime.timedelta(days=1):
+                date_string = f"Tomorrow - {formatted_date}"
+            else:
+                date_string = formatted_date
+            info = f"""
+            {event["Event Name"]}
+            Date: {date_string}
+            Time: {start_time}
+            Number of registrants: {event["Registrants"]}
+                {pretty_registrants}
+            """
+            return info
+        pretty_events += prettifyEvent(event, pretty_registrants)
 
-        # Build up formatted event info for email body
-        raw_time = event["Event Start Time"]
-        raw_date = event["Event Start Date"]
-        datetime_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d").date()
-        formatted_date = datetime.date.strftime(datetime_date, "%B %d")
-        start_time = datetime.datetime.strptime(raw_time, "%H:%M:%S").strftime(
-            "%I:%M %p"
-        )
-        if datetime_date == TODAY:
-            date_string = f"TODAY - {formatted_date}"
-        elif datetime_date == TODAY + datetime.timedelta(days=1):
-            date_string = f"Tomorrow - {formatted_date}"
-        else:
-            date_string = formatted_date
-        info = f"""
-        {event["Event Name"]}
-        Date: {date_string}
-        Time: {start_time}
-        Number of registrants: {event["Registrants"]}
-            {pretty_registrants}
-        """
-        pretty_events += info
     sendTeacherEmail(teacher, pretty_events)
 
 def sendTeacherEmail(teacher, pretty_events):
