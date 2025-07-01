@@ -31,6 +31,74 @@ logging.basicConfig(
 )
 
 
+def prettifyRegistrants(individual_event_reg):
+    res = []
+    # Iterate over response to add registrant account IDs to dictionary organized by registration status
+    for registrant in individual_event_reg["eventRegistrations"]:
+        status = registrant["tickets"][0]["attendees"][0]["registrationStatus"]
+        acct_id = registrant["registrantAccountId"]
+
+        # Retrieve email and phone associated with this account ID
+        # Registrations with multiple attendees may have different emails listed in the UI
+        # but these aren't accessible from the API, so we will just use the info from the main account
+        acct_info = neon.getAccountIndividual(acct_id)
+        email = acct_info["individualAccount"]["primaryContact"]["email1"]
+        addresses = acct_info["individualAccount"]["primaryContact"]["addresses"]
+
+        # Get the list of all phone numbers, then take the first non-None phone number
+        phones = [addr.get('phone1') for addr in addresses]
+        phone = [p for p in phones if p][0]
+        if not phone:
+            phone = "N/A"
+
+        # Build a dictionary list of attendee names under this registration
+        attendee_list = {"name": [], "email": email, "phone": phone}
+        for attendee in registrant["tickets"][0]["attendees"]:
+            attendee = f'{attendee["firstName"]} {attendee["lastName"]}'
+            attendee_list["name"].append(attendee)
+
+        # Build entry to add to registrantDict with all attendees associated with this acct Id
+        entry = {acct_id: attendee_list}
+
+        # Add to registrantDict under the appropriate status
+        # First check that this registration status is in the dictionary
+        if status not in registrant_dict:
+            registrant_dict[status] = []
+        registrant_dict[status].append(entry)
+
+    for account in registrant_dict["SUCCEEDED"]:
+        for k, v in account.items():
+            for it in v["name"]:
+                student = f"{it}:  {v['email']}, {v['phone']}"
+                res += f"\t{student}\n\t"
+    return res
+
+
+def prettifyEvent(event, pretty_registrants):
+    # Build up formatted event info for email body
+    raw_time = event["Event Start Time"]
+    raw_date = event["Event Start Date"]
+    datetime_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d").date()
+    formatted_date = datetime.date.strftime(datetime_date, "%B %d")
+    start_time = datetime.datetime.strptime(raw_time, "%H:%M:%S").strftime(
+        "%I:%M %p"
+    )
+    if datetime_date == TODAY:
+        date_string = f"TODAY - {formatted_date}"
+    elif datetime_date == TODAY + datetime.timedelta(days=1):
+        date_string = f"Tomorrow - {formatted_date}"
+    else:
+        date_string = formatted_date
+    info = f"""
+    {event["Event Name"]}
+    Date: {date_string}
+    Time: {start_time}
+    Number of registrants: {event["Registrants"]}
+        {pretty_registrants}
+    """
+    return info
+
+
 # Get events for the next DELTA_DAYS days
 TODAY = datetime.date.today()
 logging.info("\n\n----- Beginning class reminders for %s -----\n\n", TODAY.isoformat())
@@ -127,73 +195,9 @@ for teacher in TEACHERS:
 
         # Only add info if there are registrations
         if attendee_count > 0:
-            def prettifyRegistrants(individual_event_reg):
-                res = []
-                # Iterate over response to add registrant account IDs to dictionary organized by registration status
-                for registrant in individual_event_reg["eventRegistrations"]:
-                    status = registrant["tickets"][0]["attendees"][0]["registrationStatus"]
-                    acct_id = registrant["registrantAccountId"]
-
-                    # Retrieve email and phone associated with this account ID
-                    # Registrations with multiple attendees may have different emails listed in the UI
-                    # but these aren't accessible from the API, so we will just use the info from the main account
-                    acct_info = neon.getAccountIndividual(acct_id)
-                    email = acct_info["individualAccount"]["primaryContact"]["email1"]
-                    addresses = acct_info["individualAccount"]["primaryContact"]["addresses"]
-
-                    # Get the list of all phone numbers, then take the first non-None phone number
-                    phones = [addr.get('phone1') for addr in addresses]
-                    phone = [p for p in phones if p][0]
-                    if not phone:
-                        phone = "N/A"
-
-                    # Build a dictionary list of attendee names under this registration
-                    attendee_list = {"name": [], "email": email, "phone": phone}
-                    for attendee in registrant["tickets"][0]["attendees"]:
-                        attendee = f'{attendee["firstName"]} {attendee["lastName"]}'
-                        attendee_list["name"].append(attendee)
-
-                    # Build entry to add to registrantDict with all attendees associated with this acct Id
-                    entry = {acct_id: attendee_list}
-
-                    # Add to registrantDict under the appropriate status
-                    # First check that this registration status is in the dictionary
-                    if status not in registrant_dict:
-                        registrant_dict[status] = []
-                    registrant_dict[status].append(entry)
-
-                for account in registrant_dict["SUCCEEDED"]:
-                    for k, v in account.items():
-                        for it in v["name"]:
-                            student = f"{it}:  {v['email']}, {v['phone']}"
-                            res += f"\t{student}\n\t"
-                return res
             pretty_registrants += prettifyRegistrants(individual_event_reg)
         else:
             pretty_registrants += "\tNo attendees registered currently. Check Neon for updates as event approaches.\n\t"
-        def prettifyEvent(event, pretty_registrants):
-            # Build up formatted event info for email body
-            raw_time = event["Event Start Time"]
-            raw_date = event["Event Start Date"]
-            datetime_date = datetime.datetime.strptime(raw_date, "%Y-%m-%d").date()
-            formatted_date = datetime.date.strftime(datetime_date, "%B %d")
-            start_time = datetime.datetime.strptime(raw_time, "%H:%M:%S").strftime(
-                "%I:%M %p"
-            )
-            if datetime_date == TODAY:
-                date_string = f"TODAY - {formatted_date}"
-            elif datetime_date == TODAY + datetime.timedelta(days=1):
-                date_string = f"Tomorrow - {formatted_date}"
-            else:
-                date_string = formatted_date
-            info = f"""
-            {event["Event Name"]}
-            Date: {date_string}
-            Time: {start_time}
-            Number of registrants: {event["Registrants"]}
-                {pretty_registrants}
-            """
-            return info
         pretty_events += prettifyEvent(event, pretty_registrants)
 
     sendTeacherEmail(teacher, pretty_events)
