@@ -127,45 +127,48 @@ for teacher in TEACHERS:
 
         # Only add info if there are registrations
         if attendee_count > 0:
+            def prettifyRegistrants(individual_event_reg):
+                res = []
+                # Iterate over response to add registrant account IDs to dictionary organized by registration status
+                for registrant in individual_event_reg["eventRegistrations"]:
+                    status = registrant["tickets"][0]["attendees"][0]["registrationStatus"]
+                    acct_id = registrant["registrantAccountId"]
 
-            # Iterate over response to add registrant account IDs to dictionary organized by registration status
-            for registrant in individual_event_reg["eventRegistrations"]:
-                status = registrant["tickets"][0]["attendees"][0]["registrationStatus"]
-                acct_id = registrant["registrantAccountId"]
+                    # Retrieve email and phone associated with this account ID
+                    # Registrations with multiple attendees may have different emails listed in the UI
+                    # but these aren't accessible from the API, so we will just use the info from the main account
+                    acct_info = neon.getAccountIndividual(acct_id)
+                    email = acct_info["individualAccount"]["primaryContact"]["email1"]
+                    addresses = acct_info["individualAccount"]["primaryContact"]["addresses"]
 
-                # Retrieve email and phone associated with this account ID
-                # Registrations with multiple attendees may have different emails listed in the UI
-                # but these aren't accessible from the API, so we will just use the info from the main account
-                acct_info = neon.getAccountIndividual(acct_id)
-                email = acct_info["individualAccount"]["primaryContact"]["email1"]
-                addresses = acct_info["individualAccount"]["primaryContact"]["addresses"]
+                    # Get the list of all phone numbers, then take the first non-None phone number
+                    phones = [addr.get('phone1') for addr in addresses]
+                    phone = [p for p in phones if p][0]
+                    if not phone:
+                        phone = "N/A"
 
-                # Get the list of all phone numbers, then take the first non-None phone number
-                phones = [addr.get('phone1') for addr in addresses]
-                phone = [p for p in phones if p][0]
-                if not phone:
-                    phone = "N/A"
+                    # Build a dictionary list of attendee names under this registration
+                    attendee_list = {"name": [], "email": email, "phone": phone}
+                    for attendee in registrant["tickets"][0]["attendees"]:
+                        attendee = f'{attendee["firstName"]} {attendee["lastName"]}'
+                        attendee_list["name"].append(attendee)
 
-                # Build a dictionary list of attendee names under this registration
-                attendee_list = {"name": [], "email": email, "phone": phone}
-                for attendee in registrant["tickets"][0]["attendees"]:
-                    attendee = f'{attendee["firstName"]} {attendee["lastName"]}'
-                    attendee_list["name"].append(attendee)
+                    # Build entry to add to registrantDict with all attendees associated with this acct Id
+                    entry = {acct_id: attendee_list}
 
-                # Build entry to add to registrantDict with all attendees associated with this acct Id
-                entry = {acct_id: attendee_list}
+                    # Add to registrantDict under the appropriate status
+                    # First check that this registration status is in the dictionary
+                    if status not in registrant_dict:
+                        registrant_dict[status] = []
+                    registrant_dict[status].append(entry)
 
-                # Add to registrantDict under the appropriate status
-                # First check that this registration status is in the dictionary
-                if status not in registrant_dict:
-                    registrant_dict[status] = []
-                registrant_dict[status].append(entry)
-
-            for account in registrant_dict["SUCCEEDED"]:
-                for k, v in account.items():
-                    for it in v["name"]:
-                        student = f"{it}:  {v['email']}, {v['phone']}"
-                        pretty_registrants += f"\t{student}\n\t"
+                for account in registrant_dict["SUCCEEDED"]:
+                    for k, v in account.items():
+                        for it in v["name"]:
+                            student = f"{it}:  {v['email']}, {v['phone']}"
+                            res += f"\t{student}\n\t"
+                return res
+            pretty_registrants += prettifyRegistrants(individual_event_reg)
         else:
             pretty_registrants += "\tNo attendees registered currently. Check Neon for updates as event approaches.\n\t"
 
