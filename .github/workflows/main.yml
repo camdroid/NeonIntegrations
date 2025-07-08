@@ -1,10 +1,12 @@
 name: Run pytest
 jobs:
   test:
-    name: Run pytest
-    steps:
-    - run: pytest
     runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run pytest
+        run: pytest
 on:
   pull_request:
     branches:
