@@ -2,7 +2,7 @@ name: Run pytest
 jobs:
   test:
     runs-on: ubuntu-latest
-     strategy:
+    strategy:
       matrix:
         python: ["3.9"]
     steps:
