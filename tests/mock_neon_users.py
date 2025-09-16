@@ -25,6 +25,13 @@ class MockNeonUserBuilder():
         self._email = "john@example.com"
         self._individual_types = []
         self._open_path_id = random.randint(1, 100000)
+        self._valid_membership = False
+        self._paid_regular = False
+        self._paid_ceramics = False
+        self._waiver_date = None
+        self._facility_tour_date = None
+        self._ceramics_membership = False
+        self._csi_date = None
         return self
 
     def with_type(self, neon_type):
@@ -35,6 +42,34 @@ class MockNeonUserBuilder():
         self._open_path_id = alta_id
         return self
 
+    def with_valid_membership(self, val=True) -> Self:
+        self._valid_membership = val
+        return self
+
+    def with_paid_regular(self, val: bool = True) -> Self:
+        self._paid_regular = val
+        return self
+
+    def with_paid_ceramics(self, val: bool = True) -> Self:
+        self._paid_ceramics = val
+        return self
+
+    def with_waiver_date(self, date) -> Self:
+        self._waiver_date = date
+        return self
+
+    def with_facility_tour_date(self, date) -> Self:
+        self._facility_tour_date = date
+        return self
+
+    def with_ceramics_membership(self, val: bool = True) -> Self:
+        self._ceramics_membership = val
+        return self
+
+    def with_csi_date(self, date) -> Self:
+        self._csi_date = date
+        return self
+
     def build(self):
         return {
             'id': self._id,
@@ -42,5 +77,11 @@ class MockNeonUserBuilder():
             'email': self._email,
             'individualTypes': self._individual_types,
             'OpenPathID': self._open_path_id,
+            'validMembership': self._valid_membership,
+            'paidRegular': self._paid_regular,
+            'paidCeramics': self._paid_ceramics,
+            'WaiverDate': self._waiver_date,
+            'FacilityTourDate': self._facility_tour_date,
+            'ceramicsMembership': self._ceramics_membership,
+            'CsiDate': self._csi_date,
         }
-
