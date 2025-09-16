@@ -45,12 +45,18 @@ def openPathUpdateAll(neonAccounts, mailSummary = False):
     stats = MembershipStats()
 
     for account in neonAccounts:
-        if not neonAccounts[account].get("paidRegular") and not neonAccounts[account].get("paidCeramics") and not neonUtil.accountIsType(neonAccounts[account], neonUtil.STAFF_TYPE):
+        is_paid_or_staff = (neonAccounts[account].get('paidRegular') or
+                            neonAccounts[account].get('paidCeramics') or
+                            neonUtil.accountIsType(neonAccounts[account], neonUtil.STAFF_TYPE))
+
+        user_info = f'''{neonAccounts[account].get('fullName')} ({neonAccounts[account].get('Email 1')})'''
+
+        if not is_paid_or_staff:
             #Accounts that are neither paid nor staff might still have access
             if neonUtil.accountIsType(neonAccounts[account], neonUtil.LEAD_TYPE):
-                stats.compedLeaders.append(f'''{neonAccounts[account].get("fullName")} ({neonAccounts[account].get("Email 1")})''')
+                stats.compedLeaders.append(user_info)
             elif neonAccounts[account].get("compedRegular") or neonAccounts[account].get("compedCeramics"):
-                stats.compedSubscribers.append(f'''{neonAccounts[account].get("fullName")} ({neonAccounts[account].get("Email 1")})''')
+                stats.compedSubscribers.append(user_info)
 
         if neonAccounts[account].get("validMembership"):
             stats.subscriberCount += 1
@@ -65,7 +71,7 @@ def openPathUpdateAll(neonAccounts, mailSummary = False):
                 stats.paidRegulars += 1
 
         if neonAccounts[account].get("paidRegular") and neonAccounts[account].get("paidCeramics"):
-            logging.info(f'''{neonAccounts[account].get("fullName")} ({neonAccounts[account].get("Email 1")}) has concurrent paid memberships.''')
+            logging.info(f'''{user_info} has concurrent paid memberships.''')
 
         if neonUtil.subscriberHasFacilityAccess(neonAccounts[account]):
             stats.facilityUserCount += 1
@@ -79,7 +85,7 @@ def openPathUpdateAll(neonAccounts, mailSummary = False):
             #note that this isn't necessarily 100% accurate, because we have Neon users with provisioned OpenPath IDs and no access groups
             #assuming that typical users who gained and lost openPath access have a signed waiver
             if not neonAccounts[account].get("WaiverDate"):
-                stats.warningUsers.append(f'''{neonAccounts[account].get("fullName")} ({neonAccounts[account].get("Email 1")})''')
+                stats.warningUsers.append(user_info)
         elif neonUtil.accountHasFacilityAccess(neonAccounts[account]):
             neonAccounts[account] = openPathUtil.createUser(neonAccounts[account])
             openPathUtil.updateGroups(neonAccounts[account],
@@ -88,13 +94,13 @@ def openPathUpdateAll(neonAccounts, mailSummary = False):
         elif neonAccounts[account].get("validMembership"):
             startDate = neonAccounts[account].get("Membership Start Date")
             if not neonAccounts[account].get("WaiverDate"):
-                stats.missingWaiverSubscribers[account] = f'''{neonAccounts[account].get("fullName")} ({neonAccounts[account].get("Email 1")}) - since {startDate}'''
+                stats.missingWaiverSubscribers[account] = f'''{user_info} - since {startDate}'''
             if not neonAccounts[account].get("FacilityTourDate"):
-                stats.missingTourSubscribers[account] = f'''{neonAccounts[account].get("fullName")} ({neonAccounts[account].get("Email 1")}) - since {startDate}'''
+                stats.missingTourSubscribers[account] = f'''{user_info} - since {startDate}'''
 
         #an account might be missing CSI but still have regular facility access stuff handled
         if neonAccounts[account].get("ceramicsMembership") and not neonAccounts[account].get("CsiDate"):
-            stats.missingCsiSubscribers[account] = f'''{neonAccounts[account].get("fullName")} ({neonAccounts[account].get("Email 1")}) - since {neonAccounts[account].get("Ceramics Start Date")}'''
+            stats.missingCsiSubscribers[account] = f'''{user_info} - since {neonAccounts[account].get("Ceramics Start Date")}'''
 
     list_separator = '\n            '
     compedSubscriberString = ""
