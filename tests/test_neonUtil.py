@@ -4,21 +4,6 @@ from mock_neon_users import MockNeonUserBuilder
 import neonUtil
 
 class TestNeonUtil:
-    @pytest.fixture
-    def setup_mocks(self, mocker):
-        return {
-            # 'updateGroups': mocker.patch('openPathUtil.updateGroups'),
-        }
-
-    def _create_neon_accounts(self, alta_ids):
-        accts = {}
-        for aid in alta_ids:
-            acct = (MockNeonUserBuilder()
-                    .with_alta_id(aid)
-                    .build())
-            accts.update({acct['id']: acct})
-        return accts
-
     def test_valid_subscriber_has_facility_access(self):
         account = (MockNeonUserBuilder()
                    .with_valid_membership()
