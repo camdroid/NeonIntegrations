@@ -510,7 +510,6 @@ NEW_JOIN_XFAIL = pytest.mark.xfail(
 )
 
 
-@NEW_JOIN_XFAIL
 @pytest.mark.parametrize("enroll_type", ["JOIN", "REJOIN"])
 def test_new_successful_join_enters_join_path(openpath, neon_account, enroll_type):
     # TARGET: a successful new-format JOIN/REJOIN should fetch the account via
@@ -537,7 +536,6 @@ def test_new_failed_transaction_skips_join_path(openpath, neon_account):
     openpath.assert_called_once_with(account_id)
 
 
-@NEW_JOIN_XFAIL
 def test_new_fresh_join_adds_to_mailjet(openpath, neon_account, mailjet):
     # TARGET: a fresh first join in the new format should add to Mailjet, like
     # the legacy equivalent. Fails today (handle_joins is never entered).
