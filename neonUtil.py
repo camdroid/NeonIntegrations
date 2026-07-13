@@ -129,11 +129,6 @@ def appendMemberships(account: dict, detailed=False):
     # WE only think a subscription is valid if the payment transaction was successful, so check payment status.
     response = neonClient.get_memberships(account.get("Account ID"))
 
-    if response.status_code != 200:
-        raise ValueError(f"Get {url} returned status code {response.status_code}: {response.text}")
-
-    # logging.debug(pformat(response.json()))
-
     account["validMembership"] = False
 
     memberships = response.json().get("memberships")
@@ -255,11 +250,7 @@ def appendMemberships(account: dict, detailed=False):
 # Given a Neon member ID, return an account including membership info
 ####################################################################
 def getMemberById(id: int, detailed=False):
-    url = N_baseURL + f"/accounts/{id}"
-    response = requests.get(url, headers=neonClient.get_headers())
-
-    if response.status_code != 200:
-        raise ValueError(f"Get {url} returned status code {response.status_code}")
+    response = neonClient.get_account(id)
 
     account = response.json().get("individualAccount")
     logging.debug(pformat(account))

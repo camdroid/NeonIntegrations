@@ -32,8 +32,15 @@ class NeonClient:
         return self.N_headers
 
     def _get(self, url):
-        return requests.get(url, headers=self.get_headers())
+        response = requests.get(url, headers=self.get_headers())
+        if response.status_code != 200:
+            raise ValueError(f"Get {url} returned status code {response.status_code}: {response.text}")
+        return response
 
     def get_memberships(self, account_id):
         url = N_baseURL + f'/accounts/{account_id}/memberships'
+        return self._get(url)
+
+    def get_account(self, account_id):
+        url = N_baseURL + f"/accounts/{account_id}"
         return self._get(url)
