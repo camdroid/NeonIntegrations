@@ -4,6 +4,10 @@
 
 import base64
 import os
+import requests
+
+
+N_baseURL = "https://api.neoncrm.com/v2"
 
 
 class NeonClient:
@@ -26,3 +30,10 @@ class NeonClient:
 
     def get_headers(self):
         return self.N_headers
+
+    def _get(self, url):
+        return requests.get(url, headers=self.get_headers())
+
+    def get_memberships(self, account_id):
+        url = N_baseURL + f'/accounts/{account_id}/memberships'
+        return self._get(url)

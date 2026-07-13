@@ -127,8 +127,7 @@ def appendMemberships(account: dict, detailed=False):
 
     # Neon counts a failed renewal as a valid subscription so long as automatic renewal is enabled.
     # WE only think a subscription is valid if the payment transaction was successful, so check payment status.
-    url = N_baseURL + f'/accounts/{account.get("Account ID")}/memberships'
-    response = requests.get(url, headers=neonClient.get_headers())
+    response = neonClient.get_memberships(account.get("Account ID"))
 
     if response.status_code != 200:
         raise ValueError(f"Get {url} returned status code {response.status_code}: {response.text}")
