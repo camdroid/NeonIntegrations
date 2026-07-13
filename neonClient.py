@@ -37,6 +37,12 @@ class NeonClient:
             raise ValueError(f"Get {url} returned status code {response.status_code}: {response.text}")
         return response
 
+    def _patch(self, url, data):
+        response = requests.patch(url, json=data, headers=self.get_headers())
+        if response.status_code != 200:
+            raise ValueError(f"Patch {url} returned status code {response.status_code}")
+        return response
+
     def get_memberships(self, account_id):
         url = N_baseURL + f'/accounts/{account_id}/memberships'
         return self._get(url)
@@ -44,3 +50,7 @@ class NeonClient:
     def get_account(self, account_id):
         url = N_baseURL + f"/accounts/{account_id}"
         return self._get(url)
+
+    def patch_account(self, account_id, data):
+        url = N_baseURL + f'/accounts/{account_id}'
+        return self._patch(url, data)

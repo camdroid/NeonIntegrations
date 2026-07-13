@@ -66,14 +66,11 @@ def updateOpenPathID(account: dict):
         }
     }
 
-    url = N_baseURL + f'/accounts/{account.get("Account ID")}'
     if dryRun:
         logging.warning("DryRun in neonUtil.updateOpenPathID()")
         return
 
-    response = requests.patch(url, json=data, headers=neonClient.get_headers())
-    if response.status_code != 200:
-        raise ValueError(f"Patch {url} returned status code {response.status_code}")
+    neonClient.patch_account(account.get("Account ID"), data)
 
 
 ####################################################################
@@ -91,14 +88,11 @@ def updateDID(account: dict):
         }
     }
 
-    url = N_baseURL + f'/accounts/{account.get("Account ID")}'
     if dryRun:
         logging.warning("DryRun in neonUtil.updateDID()")
         return
 
-    response = requests.patch(url, json=data, headers=neonClient.get_headers())
-    if response.status_code != 200:
-        raise ValueError(f"Patch {url} returned status code {response.status_code}")
+    neonClient.patch_account(account.get("Account ID"), data)
 
 
 class RateLimiter:
