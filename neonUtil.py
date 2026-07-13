@@ -4,19 +4,16 @@
 
 from pprint import pformat, pprint
 import logging
-import base64
 import datetime, pytz
 import requests
 from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
-import os
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+from neonClient import NeonClient
 
-if os.environ.get("USER") == "ec2-user" or os.environ.get("LAMBDA_TASK_ROOT"):
-    from aws_ssm import N_APIkey, N_APIuser
-else:
-    from config import N_APIkey, N_APIuser
+
+neonClient = NeonClient()
 
 
 # I'm not absolutely certain NeonCRM thinks it's in central time, but it's in the ballpark.
@@ -28,13 +25,7 @@ yesterday = today - datetime.timedelta(days=1)
 dryRun = False
 
 # Neon Account Info
-N_auth = f"{N_APIuser}:{N_APIkey}"
 N_baseURL = "https://api.neoncrm.com/v2"
-N_signature = base64.b64encode(bytearray(N_auth.encode())).decode()
-N_headers = {
-    "Content-Type": "application/json",
-    "Authorization": f"Basic {N_signature}",
-}
 
 # Strings relevant to Neon account management
 STAFF_TYPE = "Paid Staff"
@@ -80,7 +71,7 @@ def updateOpenPathID(account: dict):
         logging.warning("DryRun in neonUtil.updateOpenPathID()")
         return
 
-    response = requests.patch(url, json=data, headers=N_headers)
+    response = requests.patch(url, json=data, headers=neonClient.get_headers())
     if response.status_code != 200:
         raise ValueError(f"Patch {url} returned status code {response.status_code}")
 
@@ -105,7 +96,7 @@ def updateDID(account: dict):
         logging.warning("DryRun in neonUtil.updateDID()")
         return
 
-    response = requests.patch(url, json=data, headers=N_headers)
+    response = requests.patch(url, json=data, headers=neonClient.get_headers())
     if response.status_code != 200:
         raise ValueError(f"Patch {url} returned status code {response.status_code}")
 
@@ -137,7 +128,7 @@ def appendMemberships(account: dict, detailed=False):
     # Neon counts a failed renewal as a valid subscription so long as automatic renewal is enabled.
     # WE only think a subscription is valid if the payment transaction was successful, so check payment status.
     url = N_baseURL + f'/accounts/{account.get("Account ID")}/memberships'
-    response = requests.get(url, headers=N_headers)
+    response = requests.get(url, headers=neonClient.get_headers())
 
     if response.status_code != 200:
         raise ValueError(f"Get {url} returned status code {response.status_code}: {response.text}")
@@ -266,7 +257,7 @@ def appendMemberships(account: dict, detailed=False):
 ####################################################################
 def getMemberById(id: int, detailed=False):
     url = N_baseURL + f"/accounts/{id}"
-    response = requests.get(url, headers=N_headers)
+    response = requests.get(url, headers=neonClient.get_headers())
 
     if response.status_code != 200:
         raise ValueError(f"Get {url} returned status code {response.status_code}")
@@ -331,7 +322,7 @@ def fixTypes(account: dict):
 )
 def _neon_search(data):
     url = N_baseURL + "/accounts/search"
-    response = requests.post(url, json=data, headers=N_headers)
+    response = requests.post(url, json=data, headers=neonClient.get_headers())
     if response.status_code != 200:
         raise ValueError(f"Post {url} returned status code {response.status_code}: {response.text}")
     return response
